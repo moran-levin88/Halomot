@@ -14,6 +14,9 @@ export default function App() {
   const [error, setError] = useState('');
   const [myName, setMyName] = useState('');
 
+  // Read room code from URL (e.g. ?room=B8EEE3)
+  const urlRoom = new URLSearchParams(window.location.search).get('room') || '';
+
   useEffect(() => {
     socket.connect();
     socket.on('room_update', ({ players: pl, host }) => {
@@ -46,12 +49,14 @@ export default function App() {
   }, []);
 
   const joinRoom = useCallback((name, room) => {
+    setError('');
     socket.emit('join_room', { roomId: room, name }, (res) => {
       if (!res.ok) return setError(res.error);
       setRoomId(room);
       setPlayerId(res.playerId);
       setIsHost(false);
       setMyName(name);
+      setError('');
       setScreen('lobby');
     });
   }, []);
@@ -72,7 +77,7 @@ export default function App() {
   return (
     <div className="app" dir="rtl">
       {screen === 'home' && (
-        <HomeScreen onCreate={createRoom} onJoin={joinRoom} error={error} />
+        <HomeScreen onCreate={createRoom} onJoin={joinRoom} error={error} urlRoom={urlRoom} />
       )}
       {screen === 'lobby' && (
         <Lobby
@@ -97,10 +102,10 @@ export default function App() {
   );
 }
 
-function HomeScreen({ onCreate, onJoin, error }) {
+function HomeScreen({ onCreate, onJoin, error, urlRoom }) {
   const [name, setName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
-  const [mode, setMode] = useState('');
+  const [joinCode, setJoinCode] = useState(urlRoom);
+  const [mode, setMode] = useState(urlRoom ? 'join' : '');
 
   return (
     <div className="home">
