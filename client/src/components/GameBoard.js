@@ -16,17 +16,17 @@ const QUEEN_COLORS = {
 };
 
 const CARD_LABELS = {
-  king: '♚ מלך',
-  knight: '⚔️ אביר',
-  dragon: '🐉 דרקון',
-  potion: '🧪 שיקוי',
-  wand: '🪄 שרביט',
-  jester: '🃏 ליצן',
+  king:   { top: '♚', label: 'מלך' },
+  knight: { top: '⚔️', label: 'אביר' },
+  dragon: { top: '🐉', label: 'דרקון' },
+  potion: { top: '🧪', label: 'שיקוי' },
+  wand:   { top: '🪄', label: 'שרביט' },
+  jester: { top: '🃏', label: 'ליצן' },
 };
 
 export default function GameBoard({ state, playerId, players, myName, onAction, error }) {
-  const [selected, setSelected] = useState([]); // selected card IDs
-  const [pendingPlay, setPendingPlay] = useState(null); // { type: 'king'|'knight'|'potion', card }
+  const [selected, setSelected] = useState([]);
+  const [pendingPlay, setPendingPlay] = useState(null);
   const [message, setMessage] = useState('');
 
   const me = state.players[playerId];
@@ -50,11 +50,23 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
   const myHand = me?.hand || [];
   const getName = (pid) => players.find(p => p.id === pid)?.name || pid;
 
-  // ---- Action handlers ----
+  // Build a map: queenId -> ownerName (for awake queens)
+  const queenOwnerMap = {};
+  for (const pid of state.playerOrder) {
+    for (const q of state.players[pid].awakeQueens) {
+      queenOwnerMap[q.id] = { name: getName(pid), isMe: pid === playerId };
+    }
+  }
 
+  // Count special cards in my hand (for display)
+  const handCounts = myHand.reduce((acc, c) => {
+    if (c.type !== 'number') acc[c.type] = (acc[c.type] || 0) + 1;
+    return acc;
+  }, {});
+
+  // ---- Action handlers ----
   function selectCard(card) {
     if (!isMyTurn || phase !== 'play') return;
-    // If clicking a power card - initiate action
     if (['king', 'knight', 'potion', 'jester'].includes(card.type)) {
       if (selected.includes(card.id)) {
         setSelected([]);
@@ -65,7 +77,6 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
       }
       return;
     }
-    // Number cards - multi-select for discard
     setSelected(prev =>
       prev.includes(card.id) ? prev.filter(id => id !== card.id) : [...prev, card.id]
     );
@@ -74,64 +85,42 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
 
   function playKing(queenIndex) {
     onAction({ type: 'play_king', cardId: pendingPlay.cardId, queenIndex });
-    setPendingPlay(null);
-    setSelected([]);
+    setPendingPlay(null); setSelected([]);
   }
-
   function playKnight(targetPlayerId, queenId) {
     onAction({ type: 'play_knight', cardId: pendingPlay.cardId, targetPlayerId, queenId });
-    setPendingPlay(null);
-    setSelected([]);
+    setPendingPlay(null); setSelected([]);
   }
-
   function playPotion(targetPlayerId, queenId) {
     onAction({ type: 'play_potion', cardId: pendingPlay.cardId, targetPlayerId, queenId });
-    setPendingPlay(null);
-    setSelected([]);
+    setPendingPlay(null); setSelected([]);
   }
-
   function playJester() {
     onAction({ type: 'play_jester', cardId: pendingPlay.cardId });
-    setPendingPlay(null);
-    setSelected([]);
+    setPendingPlay(null); setSelected([]);
   }
-
   function discardSelected() {
     if (selected.length === 0) return;
     onAction({ type: 'discard', cardIds: selected });
     setSelected([]);
   }
+  function respondDragon(use, cardId) { onAction({ type: 'respond_dragon', use, cardId }); }
+  function respondWand(use, cardId) { onAction({ type: 'respond_wand', use, cardId }); }
+  function pickJesterQueen(queenIndex) { onAction({ type: 'jester_queen', queenIndex }); }
+  function pickRoseBonus(queenIndex) { onAction({ type: 'rose_bonus', queenIndex }); }
 
-  function respondDragon(use, cardId) {
-    onAction({ type: 'respond_dragon', use, cardId });
-  }
-
-  function respondWand(use, cardId) {
-    onAction({ type: 'respond_wand', use, cardId });
-  }
-
-  function pickJesterQueen(queenIndex) {
-    onAction({ type: 'jester_queen', queenIndex });
-  }
-
-  function pickRoseBonus(queenIndex) {
-    onAction({ type: 'rose_bonus', queenIndex });
-  }
-
-  // ---- Instruction text ----
+  // ---- Instruction ----
   function getInstruction() {
     if (state.winner) return message;
     if (phase === 'waiting_dragon' && state.pendingAction?.toPlayer === playerId) {
-      const dragonCard = myHand.find(c => c.type === 'dragon');
-      return dragonCard
-        ? `${getName(state.pendingAction.fromPlayer)} שולח אביר! יש לך דרקון - האם לעצור?`
-        : `${getName(state.pendingAction.fromPlayer)} שולח אביר ואין לך דרקון.`;
+      const has = myHand.find(c => c.type === 'dragon');
+      return has ? `${getName(state.pendingAction.fromPlayer)} שולח אביר! יש לך דרקון - האם לעצור?`
+                 : `${getName(state.pendingAction.fromPlayer)} שולח אביר ואין לך דרקון.`;
     }
     if (phase === 'waiting_wand' && state.pendingAction?.toPlayer === playerId) {
-      const wandCard = myHand.find(c => c.type === 'wand');
-      return wandCard
-        ? `${getName(state.pendingAction.fromPlayer)} מנסה להרדים מלכה! יש לך שרביט - האם להגן?`
-        : `${getName(state.pendingAction.fromPlayer)} מרדים מלכה ואין לך שרביט.`;
+      const has = myHand.find(c => c.type === 'wand');
+      return has ? `${getName(state.pendingAction.fromPlayer)} מנסה להרדים מלכה! יש לך שרביט - האם להגן?`
+                 : `${getName(state.pendingAction.fromPlayer)} מרדים מלכה ואין לך שרביט.`;
     }
     if (phase === 'waiting_jester_queen' && state.pendingAction?.toPlayer === playerId)
       return 'הליצן בחר אותך! בחר מלכה לישנה להעיר 👇';
@@ -148,8 +137,8 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
 
   const instruction = getInstruction();
 
-  // ---- Render helpers ----
-  function QueenCard({ queen, onClick, dimmed, small }) {
+  // ---- Render: Queen Card (awake, face up) ----
+  function QueenCard({ queen, onClick, dimmed, small, ownerLabel }) {
     const color = QUEEN_COLORS[queen.id] || '#888';
     return (
       <div
@@ -161,16 +150,32 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         <div className="queen-emoji" style={{ color }}>♛</div>
         <div className="queen-name">{queen.name}</div>
         <div className="queen-pts">{queen.points} נק'</div>
+        {ownerLabel && <div className="queen-owner" style={{ color }}>{ownerLabel}</div>}
       </div>
     );
   }
 
-  function SleepingQueenSlot({ queen, index }) {
+  // ---- Render: Board slot (sleeping or awake) ----
+  function QueenBoardSlot({ queen, index }) {
+    // Check if this queen is awake (owned by someone)
+    if (queen && queenOwnerMap[queen.id]) {
+      // Queen is awake - show face up with owner
+      const owner = queenOwnerMap[queen.id];
+      return (
+        <QueenCard
+          queen={queen}
+          small
+          ownerLabel={owner.isMe ? 'שלי ✓' : owner.name}
+        />
+      );
+    }
+
     const canWake = (pendingPlay?.type === 'king' && isMyTurn) ||
       (phase === 'waiting_jester_queen' && state.pendingAction?.toPlayer === playerId) ||
       (phase === 'waiting_rose' && state.pendingAction?.playerId === playerId);
 
     if (!queen) return <div className="queen-slot empty" />;
+
     return (
       <div
         className={`queen-slot sleeping ${canWake ? 'can-wake' : ''}`}
@@ -187,17 +192,24 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
     );
   }
 
+  // ---- Render: Hand Card ----
   function HandCard({ card }) {
     const isSelected = selected.includes(card.id);
-    const label = card.type === 'number' ? card.value : CARD_LABELS[card.type] || card.type;
+    const info = CARD_LABELS[card.type];
     return (
       <div
-        className={`hand-card ${isSelected ? 'selected' : ''} ${isMyTurn && phase === 'play' ? 'playable' : ''}`}
+        className={`hand-card ${isSelected ? 'selected' : ''} ${isMyTurn && phase === 'play' ? 'playable' : ''} ${info ? 'special-card' : ''}`}
         onClick={() => selectCard(card)}
-        title={card.type}
       >
-        <div className="card-label">{label}</div>
-        <div className="card-type">{card.type === 'number' ? '🔢' : ''}</div>
+        {info ? (
+          <>
+            <div className="card-top-icon">{info.top}</div>
+            <div className="card-special-label">{info.label}</div>
+            {handCounts[card.type] > 1 && <div className="card-count">×{handCounts[card.type]}</div>}
+          </>
+        ) : (
+          <div className="card-number">{card.value}</div>
+        )}
       </div>
     );
   }
@@ -233,6 +245,12 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
     return null;
   }
 
+  // Build full 12-slot board: sleeping queens + awake queens in their original positions
+  // We show all queens from sleepingQueens array (null = slot freed when queen was taken)
+  // Plus we need to show awake queens somewhere on the board
+  // Strategy: collect all queens (sleeping + awake) and display in a unified grid
+  const allQueens = [...state.sleepingQueens];
+
   return (
     <div className="game-board">
       {/* Header */}
@@ -241,15 +259,12 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         <div className="deck-info">קופה: {state.drawPileCount} קלפים</div>
       </div>
 
-      {/* Instruction banner */}
+      {/* Instruction */}
       <div className={`instruction-banner ${isMyTurn ? 'my-turn' : ''}`}>
         {instruction}
       </div>
 
-      {/* Error */}
       {error && <div className="error-toast">{error}</div>}
-
-      {/* Defense prompt */}
       <DefensePrompt />
 
       {/* Opponents */}
@@ -286,12 +301,12 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         })}
       </div>
 
-      {/* Sleeping queens grid */}
+      {/* Queens board - all 12 positions */}
       <div className="sleeping-area">
-        <h3>מלכות ישנות</h3>
+        <h3>לוח המלכות</h3>
         <div className="queens-grid">
-          {state.sleepingQueens.map((queen, i) => (
-            <SleepingQueenSlot key={i} queen={queen} index={i} />
+          {allQueens.map((queen, i) => (
+            <QueenBoardSlot key={i} queen={queen} index={i} />
           ))}
         </div>
       </div>
@@ -303,21 +318,12 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
           <span className="pts-badge">{(me?.awakeQueens || []).reduce((s, q) => s + q.points, 0)} נק'</span>
         </div>
 
-        {/* My awake queens */}
-        <div className="my-queens">
-          {(me?.awakeQueens || []).map(queen => (
-            <QueenCard key={queen.id} queen={queen} small />
-          ))}
-          {me?.awakeQueens.length === 0 && <span className="no-queens">עדיין אין מלכות</span>}
-        </div>
-
         {/* Hand */}
         <div className="hand-area">
           <div className="hand-cards">
             {myHand.map(card => <HandCard key={card.id} card={card} />)}
           </div>
 
-          {/* Actions */}
           {isMyTurn && phase === 'play' && (
             <div className="action-buttons">
               {pendingPlay?.type === 'jester' && (
@@ -345,7 +351,6 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         ))}
       </div>
 
-      {/* Win overlay */}
       {state.winner && (
         <div className="win-overlay">
           <div className="win-box">

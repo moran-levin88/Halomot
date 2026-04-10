@@ -158,6 +158,13 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
 .hand-card.selected { border-color: #fbbf24; background: #fbbf2411; transform: translateY(-6px); box-shadow: 0 4px 12px #fbbf2444; }
 .card-label { font-size: 1rem; font-weight: bold; color: #e2e8f0; text-align: center; line-height: 1.2; }
 .card-type { font-size: 0.7rem; color: #64748b; }
+.card-number { font-size: 1.8rem; font-weight: bold; color: #e2e8f0; }
+.card-top-icon { font-size: 1.4rem; line-height: 1; }
+.card-special-label { font-size: 0.8rem; font-weight: bold; color: #fbbf24; margin-top: 0.15rem; }
+.card-count { font-size: 0.65rem; color: #64748b; margin-top: 0.1rem; }
+.special-card { border-color: #475569 !important; }
+.special-card.selected { border-color: #fbbf24 !important; }
+.queen-owner { font-size: 0.6rem; margin-top: 0.2rem; font-weight: bold; opacity: 0.9; }
 
 .action-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
