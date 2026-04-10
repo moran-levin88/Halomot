@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
 
   socket.on('join_room', ({ roomId, name }, cb) => {
     const room = rooms[roomId];
-    if (!room) return cb({ ok: false, error: 'חדר לא קיים' });
+    if (!room) return cb({ ok: false, error: 'חדר לא קיים — בקש מהמארח ליצור חדר חדש' });
     if (room.game) return cb({ ok: false, error: 'משחק כבר התחיל' });
     if (room.players.length >= 5) return cb({ ok: false, error: 'החדר מלא' });
 

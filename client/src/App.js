@@ -34,7 +34,7 @@ export default function App() {
       socket.emit('rejoin_room', { roomId: rId, playerId: pId }, (res) => {
         if (!res?.ok) {
           setScreen('home');
-          setError('החדר לא קיים יותר. צור חדר חדש.');
+          setError('השרת התאפס — צור חדר חדש ושלח קוד חדש לחברים.');
           setRoomId(null);
           setPlayerId(null);
         }
