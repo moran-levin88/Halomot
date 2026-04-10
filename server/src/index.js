@@ -243,4 +243,12 @@ io.on('connection', (socket) => {
 app.get('/health', (_, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const START_TIME = new Date().toISOString();
+server.listen(PORT, () => console.log(`Server started at ${START_TIME} on port ${PORT}`));
+
+app.get('/status', (_, res) => res.json({
+  ok: true,
+  startedAt: START_TIME,
+  uptime: Math.floor(process.uptime()) + 's',
+  rooms: Object.keys(rooms).length,
+}));
