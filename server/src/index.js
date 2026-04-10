@@ -196,7 +196,7 @@ io.on('connection', (socket) => {
           host: room.host,
         });
       }
-    }, 20000);
+    }, 5 * 60 * 1000); // 5 minutes grace — covers phone screen-off
   });
 });
 

@@ -26,20 +26,32 @@ export default function App() {
   useEffect(() => {
     socket.connect();
 
-    socket.on('connect', () => {
+    function doRejoin() {
       const rId = roomIdRef.current;
       const pId = playerIdRef.current;
-      if (rId && pId) {
-        socket.emit('rejoin_room', { roomId: rId, playerId: pId }, (res) => {
-          if (!res?.ok) {
-            setScreen('home');
-            setError('החדר לא קיים יותר. צור חדר חדש.');
-            setRoomId(null);
-            setPlayerId(null);
-          }
-        });
+      if (!rId || !pId) return;
+      if (!socket.connected) {
+        socket.connect();
       }
-    });
+      socket.emit('rejoin_room', { roomId: rId, playerId: pId }, (res) => {
+        if (!res?.ok) {
+          setScreen('home');
+          setError('החדר לא קיים יותר. צור חדר חדש.');
+          setRoomId(null);
+          setPlayerId(null);
+        }
+      });
+    }
+
+    socket.on('connect', doRejoin);
+
+    // Re-join when phone screen turns back on
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        doRejoin();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     socket.on('room_update', ({ players: pl }) => {
       setPlayers(pl);
@@ -50,9 +62,10 @@ export default function App() {
       setError('');
     });
     return () => {
-      socket.off('connect');
+      socket.off('connect', doRejoin);
       socket.off('room_update');
       socket.off('game_state');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
