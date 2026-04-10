@@ -263,11 +263,12 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
     return null;
   }
 
-  // Build full 12-slot board: sleeping queens + awake queens in their original positions
-  // We show all queens from sleepingQueens array (null = slot freed when queen was taken)
-  // Plus we need to show awake queens somewhere on the board
-  // Strategy: collect all queens (sleeping + awake) and display in a unified grid
   const allQueens = [...state.sleepingQueens];
+  const myPoints = (me?.awakeQueens || []).reduce((s, q) => s + q.points, 0);
+  const targeting = pendingPlay?.type === 'knight' || pendingPlay?.type === 'potion';
+  const needDefense =
+    (phase === 'waiting_dragon' && state.pendingAction?.toPlayer === playerId) ||
+    (phase === 'waiting_wand'   && state.pendingAction?.toPlayer === playerId);
 
   return (
     <div className="game-board">
@@ -277,106 +278,41 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         <div className="deck-info">קופה: {state.drawPileCount} קלפים</div>
       </div>
 
-      {/* Instruction */}
-      <div className={`instruction-banner ${isMyTurn ? 'my-turn' : ''}`}>
+      {/* Defense alert — sticky, very prominent */}
+      {needDefense && (
+        <div className="defense-alert">
+          <DefensePrompt />
+        </div>
+      )}
+
+      {/* Turn banner */}
+      <div className={`instruction-banner ${isMyTurn || needDefense ? 'my-turn' : ''}`}>
+        {isMyTurn && !needDefense && <span className="turn-pulse">▶ </span>}
         {instruction}
       </div>
 
       {error && <div className="error-toast">{error}</div>}
-      <DefensePrompt />
 
-      {/* Opponents */}
-      {(() => {
-        const targeting = pendingPlay?.type === 'knight' || pendingPlay?.type === 'potion';
-        const opponentQueensExist = state.playerOrder
-          .filter(pid => pid !== playerId)
-          .some(pid => state.players[pid].awakeQueens.length > 0);
-        return (
-          <div className={`opponents-area ${targeting ? 'targeting' : ''}`}>
-            {targeting && !opponentQueensExist && (
-              <div className="no-target-warning">
-                ⚠️ לאף יריב אין מלכות ערות כרגע — לחץ "בטל בחירה" ובחר קלפים להשלכה
-              </div>
-            )}
-            {state.playerOrder.filter(pid => pid !== playerId).map(pid => {
-              const p = state.players[pid];
-              const pts = p.awakeQueens.reduce((s, q) => s + q.points, 0);
-              return (
-                <div key={pid} className={`opponent ${state.currentPlayer === pid ? 'active' : ''} ${targeting ? 'targetable' : ''}`}>
-                  <div className="opponent-header">
-                    <strong>{getName(pid)}</strong>
-                    <span className="pts-badge">{pts} נק'</span>
-                    <span className="hand-count">🃏×{p.handCount}</span>
-                  </div>
-                  <div className="opponent-queens">
-                    {p.awakeQueens.length === 0 && <span className="no-queens">אין מלכות</span>}
-                    {p.awakeQueens.map(queen => (
-                      <QueenCard
-                        key={queen.id}
-                        queen={queen}
-                        small
-                        dimmed={false}
-                        onClick={targeting ? () => (
-                          pendingPlay.type === 'knight'
-                            ? playKnight(pid, queen.id)
-                            : playPotion(pid, queen.id)
-                        ) : null}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
-
-      {/* Awake queens on board */}
-      {Object.values(state.players).some(p => p.awakeQueens.length > 0) && (
-        <div className="awake-area">
-          <h3>מלכות ערות 👑</h3>
-          <div className="awake-queens-row">
-            {state.playerOrder.map(pid =>
-              state.players[pid].awakeQueens.map(queen => (
-                <QueenCard
-                  key={queen.id}
-                  queen={queen}
-                  small
-                  ownerLabel={pid === playerId ? `${myName} ✓` : getName(pid)}
-                  dimmed={false}
-                  onClick={
-                    (pendingPlay?.type === 'knight' || pendingPlay?.type === 'potion') && pid !== playerId
-                      ? () => pendingPlay.type === 'knight'
-                          ? playKnight(pid, queen.id)
-                          : playPotion(pid, queen.id)
-                      : null
-                  }
-                />
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Sleeping queens grid */}
-      <div className="sleeping-area">
-        <h3>מלכות ישנות 💤</h3>
-        <div className="queens-grid">
-          {allQueens.map((queen, i) => (
-            <QueenBoardSlot key={i} queen={queen} index={i} />
-          ))}
-        </div>
-      </div>
-
-      {/* My area */}
-      <div className="my-area">
+      {/* ===== MY AREA — top ===== */}
+      <div className={`my-area ${isMyTurn ? 'my-turn-area' : ''}`}>
         <div className="my-header">
-          <strong>{myName} (אתה)</strong>
-          <span className="pts-badge">{(me?.awakeQueens || []).reduce((s, q) => s + q.points, 0)} נק'</span>
+          <strong>👤 {myName}</strong>
+          <span className="pts-badge">{myPoints} נק'</span>
+          <span className="queen-count-badge">♛×{(me?.awakeQueens || []).length}</span>
         </div>
+
+        {/* My awake queens */}
+        {(me?.awakeQueens || []).length > 0 && (
+          <div className="my-queens">
+            {(me.awakeQueens).map(queen => (
+              <QueenCard key={queen.id} queen={queen} small />
+            ))}
+          </div>
+        )}
 
         {/* Hand */}
         <div className="hand-area">
+          <div className="hand-label">הקלפים שלי:</div>
           <div className="hand-cards">
             {myHand.map(card => <HandCard key={card.id} card={card} />)}
           </div>
@@ -401,7 +337,7 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         </div>
       </div>
 
-      {/* Discard pile */}
+      {/* Discard pile — near top */}
       {(state.discardPile?.length > 0) && (
         <div className="discard-area">
           <div className="discard-title">🗂️ קופת השלכות ({state.discardPile.length} קלפים)</div>
@@ -421,6 +357,54 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
           </div>
         </div>
       )}
+
+      {/* Opponents */}
+      <div className={`opponents-area ${targeting ? 'targeting' : ''}`}>
+        {targeting && !state.playerOrder.filter(pid => pid !== playerId).some(pid => state.players[pid].awakeQueens.length > 0) && (
+          <div className="no-target-warning">
+            ⚠️ לאף יריב אין מלכות ערות כרגע — לחץ "בטל בחירה"
+          </div>
+        )}
+        {state.playerOrder.filter(pid => pid !== playerId).map(pid => {
+          const p = state.players[pid];
+          const pts = p.awakeQueens.reduce((s, q) => s + q.points, 0);
+          return (
+            <div key={pid} className={`opponent ${state.currentPlayer === pid ? 'active' : ''} ${targeting ? 'targetable' : ''}`}>
+              <div className="opponent-header">
+                <strong>{getName(pid)}</strong>
+                <span className="pts-badge">{pts} נק'</span>
+                <span className="hand-count">🃏×{p.handCount}</span>
+              </div>
+              <div className="opponent-queens">
+                {p.awakeQueens.length === 0 && <span className="no-queens">אין מלכות</span>}
+                {p.awakeQueens.map(queen => (
+                  <QueenCard
+                    key={queen.id}
+                    queen={queen}
+                    small
+                    dimmed={false}
+                    onClick={targeting ? () => (
+                      pendingPlay.type === 'knight'
+                        ? playKnight(pid, queen.id)
+                        : playPotion(pid, queen.id)
+                    ) : null}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Sleeping queens grid */}
+      <div className="sleeping-area">
+        <h3>מלכות ישנות 💤</h3>
+        <div className="queens-grid">
+          {allQueens.map((queen, i) => (
+            <QueenBoardSlot key={i} queen={queen} index={i} />
+          ))}
+        </div>
+      </div>
 
       {/* Log */}
       <div className="game-log">

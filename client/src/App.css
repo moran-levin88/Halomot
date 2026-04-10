@@ -67,8 +67,25 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
   transition: all 0.3s;
 }
 .instruction-banner.my-turn {
-  border-color: #fbbf24; color: #fbbf24; background: #1e293b;
-  box-shadow: 0 0 12px #fbbf2433;
+  border-color: #fbbf24; color: #fbbf24; background: #29200a;
+  box-shadow: 0 0 16px #fbbf2455; font-size: 1.05rem; font-weight: bold;
+}
+.turn-pulse {
+  display: inline-block;
+  animation: pulse-arrow 0.8s ease-in-out infinite alternate;
+}
+@keyframes pulse-arrow {
+  from { opacity: 0.4; transform: translateX(2px); }
+  to   { opacity: 1;   transform: translateX(-2px); }
+}
+
+/* Defense alert — sticky at top */
+.defense-alert {
+  position: sticky; top: 0; z-index: 50;
+  animation: pop 0.3s ease-out;
+}
+.defense-alert .defense-prompt {
+  border-width: 3px; box-shadow: 0 0 24px #60a5fa66;
 }
 
 .error-toast {
@@ -105,9 +122,7 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
 }
 .hand-count { color: #64748b; font-size: 0.8rem; margin-right: auto; }
 
-/* ===== AWAKE QUEENS ===== */
-.awake-area { background: #1a2e1a; border: 1px solid #22c55e44; border-radius: 12px; padding: 1rem; }
-.awake-area h3 { color: #22c55e; margin-bottom: 0.75rem; font-size: 0.9rem; }
+/* ===== AWAKE QUEENS (kept for opponent cards inside opponent div) ===== */
 .awake-queens-row { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 60px; }
 
 /* ===== SLEEPING QUEENS ===== */
@@ -149,12 +164,20 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
 /* ===== MY AREA ===== */
 .my-area {
   background: #1e293b; border: 1px solid #334155; border-radius: 12px;
-  padding: 1rem;
+  padding: 1rem; transition: border-color 0.3s, box-shadow 0.3s;
+}
+.my-area.my-turn-area {
+  border-color: #fbbf24; box-shadow: 0 0 14px #fbbf2433;
 }
 .my-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
-.my-queens { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 50px; margin-bottom: 0.75rem; }
+.queen-count-badge {
+  background: #1e3a5f; color: #60a5fa; font-size: 0.75rem;
+  padding: 0.15rem 0.5rem; border-radius: 99px; font-weight: bold;
+}
+.my-queens { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
 
-.hand-area { display: flex; flex-direction: column; gap: 0.75rem; }
+.hand-label { font-size: 0.75rem; color: #64748b; margin-bottom: 0.3rem; }
+.hand-area { display: flex; flex-direction: column; gap: 0.5rem; }
 .hand-cards { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .hand-card {

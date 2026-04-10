@@ -47,6 +47,7 @@ export default function App() {
     socket.on('game_state', (state) => {
       setGameState(state);
       if (state) setScreen('game');
+      setError('');
     });
     return () => {
       socket.off('connect');
