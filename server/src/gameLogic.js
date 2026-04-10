@@ -1,24 +1,28 @@
 // ==================== QUEENS ====================
 const QUEENS = [
-  { id: 'rose',      name: 'מלכת הוורדים',   points: 5,  special: 'rose' },
-  { id: 'cat',       name: 'מלכת החתולים',   points: 15, special: 'cat' },
-  { id: 'dog',       name: 'מלכת הכלבים',    points: 15, special: 'dog' },
-  { id: 'pancake',   name: 'מלכת החביתיות',  points: 10 },
-  { id: 'cookie',    name: 'מלכת העוגיות',   points: 10 },
-  { id: 'sun',       name: 'מלכת השמש',      points: 20 },
-  { id: 'moon',      name: 'מלכת הירח',      points: 20 },
-  { id: 'star',      name: 'מלכת הכוכב',     points: 5 },
-  { id: 'ladybug',   name: 'מלכת גב פרה',    points: 5 },
-  { id: 'strawberry',name: 'מלכת התות',      points: 5 },
-  { id: 'ice',       name: 'מלכת הקרח',      points: 10 },
-  { id: 'cake',      name: 'מלכת העוגה',     points: 15 },
+  { id: 'rose',        name: 'מלכת הוורדים',    points: 5,  special: 'rose' },
+  { id: 'cat',         name: 'מלכת החתולים',    points: 15, special: 'cat' },
+  { id: 'dog',         name: 'מלכת הכלבלבים',   points: 15, special: 'dog' },
+  { id: 'pancake',     name: 'מלכת החביתיות',   points: 15 },
+  { id: 'moon',        name: 'מלכת הירח',       points: 10 },
+  { id: 'butterfly',   name: 'מלכת הפרפרים',    points: 10 },
+  { id: 'sunflower',   name: 'מלכת החמניות',    points: 10 },
+  { id: 'heart',       name: 'מלכת הלבבות',     points: 20 },
+  { id: 'rainbow',     name: 'מלכת הקשת',       points: 5  },
+  { id: 'cake',        name: 'מלכת העוגות',      points: 5  },
+  { id: 'icecream',    name: 'מלכת הגלידה',     points: 5  },
+  { id: 'starfish',    name: 'מלכת כוכבי הים',  points: 5  },
+  { id: 'strawberry',  name: 'מלכת התותים',     points: 10 },
+  { id: 'peacock',     name: 'מלכת הטווס',      points: 10 },
+  { id: 'books',       name: 'מלכת הספרים',     points: 15 },
+  { id: 'ladybug',     name: 'מלכת החיפושיות',  points: 10 },
 ];
 
 // ==================== DECK CREATION ====================
 function createDeck() {
   const deck = [];
-  // 8 kings
-  for (let i = 0; i < 8; i++) deck.push({ id: `king_${i}`, type: 'king' });
+  // 10 kings
+  for (let i = 0; i < 10; i++) deck.push({ id: `king_${i}`, type: 'king' });
   // 5 jesters
   for (let i = 0; i < 5; i++) deck.push({ id: `jester_${i}`, type: 'jester' });
   // 4 knights

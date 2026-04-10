@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
 const QUEEN_COLORS = {
-  rose: '#ff6b9d',
-  cat: '#a78bfa',
-  dog: '#60a5fa',
-  pancake: '#fbbf24',
-  cookie: '#d97706',
-  sun: '#f59e0b',
-  moon: '#818cf8',
-  star: '#34d399',
-  ladybug: '#f87171',
+  rose:       '#ff6b9d',
+  cat:        '#f97316',
+  dog:        '#14b8a6',
+  pancake:    '#b45309',
+  moon:       '#818cf8',
+  butterfly:  '#a855f7',
+  sunflower:  '#eab308',
+  heart:      '#ef4444',
+  rainbow:    '#06b6d4',
+  cake:       '#f87171',
+  icecream:   '#84cc16',
+  starfish:   '#f59e0b',
   strawberry: '#fb7185',
-  ice: '#93c5fd',
-  cake: '#c084fc',
+  peacock:    '#d4a017',
+  books:      '#c084fc',
+  ladybug:    '#dc2626',
 };
 
 const CARD_LABELS = {
