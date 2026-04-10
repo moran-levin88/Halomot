@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const {
   createGame, currentPlayer, playAction,
   respondDragon, respondWand, respondJesterQueen, playRoseBonus,
+  removePlayerFromGame,
 } = require('./gameLogic');
 
 const app = express();
@@ -185,11 +186,27 @@ io.on('connection', (socket) => {
     disconnectTimers[playerId] = setTimeout(() => {
       delete disconnectTimers[playerId];
       if (!rooms[roomId]) return;
+
+      const playerName = room.players.find(p => p.id === playerId)?.name || playerId;
       room.players = room.players.filter(p => p.id !== playerId);
+
       if (room.players.length === 0) {
         delete rooms[roomId];
+        return;
+      }
+
+      if (room.host === playerId) room.host = room.players[0].id;
+
+      if (room.game) {
+        // Remove from active game and unblock any stuck phase
+        removePlayerFromGame(room.game, playerId, playerName);
+        if (room.game.playerOrder.length < 2) {
+          // Only one player left — they win
+          room.game.winner = room.game.playerOrder[0];
+          room.game.log.push(`${playerName} עזב את המשחק - ${room.players[0].name} ניצח!`);
+        }
+        broadcastRoom(room);
       } else {
-        if (room.host === playerId) room.host = room.players[0].id;
         io.to(roomId).emit('room_update', {
           roomId,
           players: room.players.map(p => ({ id: p.id, name: p.name })),

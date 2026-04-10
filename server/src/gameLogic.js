@@ -486,6 +486,60 @@ function playDiscard(game, playerId, action) {
   return { ok: true, event: 'discard', count: cards.length };
 }
 
+// ==================== REMOVE PLAYER ====================
+function removePlayerFromGame(game, playerId, playerName) {
+  if (!game.players[playerId]) return;
+
+  // Put their awake queens back to sleep
+  for (const queen of game.players[playerId].awakeQueens) {
+    const slot = game.sleepingQueens.findIndex(q => q === null);
+    if (slot !== -1) game.sleepingQueens[slot] = queen;
+    else game.sleepingQueens.push(queen);
+  }
+
+  // Remove from playerOrder and players map
+  game.playerOrder = game.playerOrder.filter(id => id !== playerId);
+  delete game.players[playerId];
+  game.log.push(`${playerName} עזב את המשחק`);
+
+  if (game.playerOrder.length === 0) return;
+
+  // Fix currentPlayerIndex if out of bounds
+  if (game.currentPlayerIndex >= game.playerOrder.length) {
+    game.currentPlayerIndex = 0;
+  }
+
+  // Resolve stuck pending phases involving the leaving player
+  const pa = game.pendingAction;
+  if (!pa) return;
+
+  if (pa.fromPlayer === playerId || pa.toPlayer === playerId) {
+    // Unblock: if the leaving player was the attacker, just cancel
+    // If they were the defender, attacker's action succeeds automatically
+    if (game.phase === 'waiting_dragon' || game.phase === 'waiting_wand') {
+      if (pa.toPlayer === playerId) {
+        // Defender left — execute the attack
+        if (game.phase === 'waiting_dragon') {
+          stealQueen(game, pa.toPlayer, pa.fromPlayer, pa.queenId);
+          game.log.push(`${pa.queenId} נגנבה כי הסולחן עזב`);
+        } else {
+          // waiting_wand — queen goes to sleep but defender already gone, just clear
+        }
+      }
+      // Either way, clear and move on
+      const attackerStillIn = game.playerOrder.includes(pa.fromPlayer);
+      if (attackerStillIn) {
+        const idx = game.playerOrder.indexOf(pa.fromPlayer);
+        game.currentPlayerIndex = (idx + 1) % game.playerOrder.length;
+      }
+    } else if (game.phase === 'waiting_jester_queen' || game.phase === 'waiting_rose') {
+      // Just skip
+    }
+    game.phase = 'play';
+    game.pendingAction = null;
+  }
+}
+
 // ==================== EXPORTS ====================
 module.exports = {
   createGame,
@@ -496,4 +550,5 @@ module.exports = {
   respondJesterQueen,
   playRoseBonus,
   getWinnerIfAllAwake,
+  removePlayerFromGame,
 };
