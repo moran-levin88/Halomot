@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import socket from './socket';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
@@ -17,9 +17,31 @@ export default function App() {
   // Read room code from URL (e.g. ?room=B8EEE3)
   const urlRoom = new URLSearchParams(window.location.search).get('room') || '';
 
+  // Refs so reconnect handler can read latest state
+  const roomIdRef = useRef(null);
+  const playerIdRef = useRef(null);
+  useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
+  useEffect(() => { playerIdRef.current = playerId; }, [playerId]);
+
   useEffect(() => {
     socket.connect();
-    socket.on('room_update', ({ players: pl, host }) => {
+
+    socket.on('connect', () => {
+      const rId = roomIdRef.current;
+      const pId = playerIdRef.current;
+      if (rId && pId) {
+        socket.emit('rejoin_room', { roomId: rId, playerId: pId }, (res) => {
+          if (!res?.ok) {
+            setScreen('home');
+            setError('החדר לא קיים יותר. צור חדר חדש.');
+            setRoomId(null);
+            setPlayerId(null);
+          }
+        });
+      }
+    });
+
+    socket.on('room_update', ({ players: pl }) => {
       setPlayers(pl);
     });
     socket.on('game_state', (state) => {
@@ -27,6 +49,7 @@ export default function App() {
       if (state) setScreen('game');
     });
     return () => {
+      socket.off('connect');
       socket.off('room_update');
       socket.off('game_state');
     };

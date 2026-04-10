@@ -20,6 +20,8 @@ const io = new Server(server, {
 
 // rooms: { [roomId]: { id, players: [{id, name, socketId}], game, host } }
 const rooms = {};
+// Grace period timers before removing disconnected players
+const disconnectTimers = {};
 
 function getRoomView(room, forPlayerId) {
   if (!room.game) return null;
@@ -137,21 +139,55 @@ io.on('connection', (socket) => {
     broadcastRoom(room);
   });
 
-  socket.on('disconnect', () => {
-    const { roomId, playerId } = socket.data || {};
-    if (!roomId || !rooms[roomId]) return;
+  socket.on('rejoin_room', ({ roomId, playerId }, cb) => {
+    // Cancel pending removal timer
+    if (disconnectTimers[playerId]) {
+      clearTimeout(disconnectTimers[playerId]);
+      delete disconnectTimers[playerId];
+    }
     const room = rooms[roomId];
-    room.players = room.players.filter(p => p.id !== playerId);
-    if (room.players.length === 0) {
-      delete rooms[roomId];
+    if (!room) return cb?.({ ok: false, error: 'חדר לא קיים' });
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return cb?.({ ok: false, error: 'שחקן לא נמצא' });
+
+    // Re-associate socket
+    player.socketId = socket.id;
+    socket.join(roomId);
+    socket.data = { roomId, playerId };
+    cb?.({ ok: true, isHost: room.host === playerId });
+
+    if (room.game) {
+      socket.emit('game_state', getRoomView(room, playerId));
     } else {
-      if (room.host === playerId) room.host = room.players[0].id;
       io.to(roomId).emit('room_update', {
         roomId,
         players: room.players.map(p => ({ id: p.id, name: p.name })),
         host: room.host,
       });
     }
+  });
+
+  socket.on('disconnect', () => {
+    const { roomId, playerId } = socket.data || {};
+    if (!roomId || !rooms[roomId]) return;
+    const room = rooms[roomId];
+
+    // Wait 20 seconds before removing — gives time to reconnect
+    disconnectTimers[playerId] = setTimeout(() => {
+      delete disconnectTimers[playerId];
+      if (!rooms[roomId]) return;
+      room.players = room.players.filter(p => p.id !== playerId);
+      if (room.players.length === 0) {
+        delete rooms[roomId];
+      } else {
+        if (room.host === playerId) room.host = room.players[0].id;
+        io.to(roomId).emit('room_update', {
+          roomId,
+          players: room.players.map(p => ({ id: p.id, name: p.name })),
+          host: room.host,
+        });
+      }
+    }, 20000);
   });
 });
 
