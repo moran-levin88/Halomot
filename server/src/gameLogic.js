@@ -398,10 +398,11 @@ function playJester(game, playerId, action) {
 
   const powerTypes = ['king', 'knight', 'dragon', 'potion', 'wand', 'jester'];
   if (powerTypes.includes(flipped.type)) {
+    // Special card: player keeps it, turn passes to next player
     game.players[playerId].hand.push(flipped);
     fillHand(game, playerId);
-    // same player goes again
-    return { ok: true, event: 'jester_power', card: flipped, extraTurn: true };
+    nextTurn(game);
+    return { ok: true, event: 'jester_power', card: flipped };
   } else {
     // number card: count left to find who wakes a queen
     const num = flipped.value;

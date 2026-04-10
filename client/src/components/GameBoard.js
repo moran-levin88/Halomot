@@ -141,7 +141,7 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
     if (pendingPlay?.type === 'king') return 'בחר מלכה לישנה להעיר 👇';
     if (pendingPlay?.type === 'knight') return '⚔️ בחר מלכה ערה של יריב לגנוב (למעלה)';
     if (pendingPlay?.type === 'potion') return '🧪 בחר מלכה ערה של יריב להרדים (למעלה)';
-    if (pendingPlay?.type === 'jester') return 'לחץ "שחק ליצן" לזרוק את הקוביה 🃏';
+    if (pendingPlay?.type === 'jester') return '🃏 לחץ "שחק ליצן" לחשוף קלף מהקופה';
     if (selected.length > 0) return 'לחץ "השלך" להשתמש בקלפים שנבחרו';
     return 'בחר קלף לשחק, או בחר קלפים להשלכה';
   }
