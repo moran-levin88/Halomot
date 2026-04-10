@@ -99,6 +99,11 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
 }
 .hand-count { color: #64748b; font-size: 0.8rem; margin-right: auto; }
 
+/* ===== AWAKE QUEENS ===== */
+.awake-area { background: #1a2e1a; border: 1px solid #22c55e44; border-radius: 12px; padding: 1rem; }
+.awake-area h3 { color: #22c55e; margin-bottom: 0.75rem; font-size: 0.9rem; }
+.awake-queens-row { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 60px; }
+
 /* ===== SLEEPING QUEENS ===== */
 .sleeping-area { background: #1e293b; border-radius: 12px; padding: 1rem; }
 .sleeping-area h3 { color: #94a3b8; margin-bottom: 0.75rem; font-size: 0.9rem; }

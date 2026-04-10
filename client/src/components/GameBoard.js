@@ -301,9 +301,36 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         })}
       </div>
 
-      {/* Queens board - all 12 positions */}
+      {/* Awake queens on board */}
+      {Object.values(state.players).some(p => p.awakeQueens.length > 0) && (
+        <div className="awake-area">
+          <h3>מלכות ערות 👑</h3>
+          <div className="awake-queens-row">
+            {state.playerOrder.map(pid =>
+              state.players[pid].awakeQueens.map(queen => (
+                <QueenCard
+                  key={queen.id}
+                  queen={queen}
+                  small
+                  ownerLabel={pid === playerId ? `${myName} ✓` : getName(pid)}
+                  dimmed={false}
+                  onClick={
+                    (pendingPlay?.type === 'knight' || pendingPlay?.type === 'potion') && pid !== playerId
+                      ? () => pendingPlay.type === 'knight'
+                          ? playKnight(pid, queen.id)
+                          : playPotion(pid, queen.id)
+                      : null
+                  }
+                />
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Sleeping queens grid */}
       <div className="sleeping-area">
-        <h3>לוח המלכות</h3>
+        <h3>מלכות ישנות 💤</h3>
         <div className="queens-grid">
           {allQueens.map((queen, i) => (
             <QueenBoardSlot key={i} queen={queen} index={i} />
