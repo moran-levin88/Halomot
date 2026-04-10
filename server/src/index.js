@@ -3,6 +3,14 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
+
+// Prevent server crash on unhandled errors
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});
 const {
   createGame, currentPlayer, playAction,
   respondDragon, respondWand, respondJesterQueen, playRoseBonus,
@@ -73,7 +81,17 @@ function broadcastRoom(room) {
 io.on('connection', (socket) => {
   console.log('connected:', socket.id);
 
-  socket.on('create_room', ({ name }, cb) => {
+  // Wrap every handler so a crash in one game doesn't kill the server
+  const safe = (fn) => (...args) => {
+    try { fn(...args); }
+    catch (e) {
+      console.error('Socket handler error:', e);
+      const cb = args[args.length - 1];
+      if (typeof cb === 'function') cb({ ok: false, error: 'שגיאת שרת פנימית' });
+    }
+  };
+
+  socket.on('create_room', safe(({ name }, cb) => {
     const roomId = uuidv4().slice(0, 6).toUpperCase();
     const playerId = uuidv4();
     rooms[roomId] = {
@@ -90,9 +108,9 @@ io.on('connection', (socket) => {
       players: rooms[roomId].players.map(p => ({ id: p.id, name: p.name })),
       host: rooms[roomId].host,
     });
-  });
+  }));
 
-  socket.on('join_room', ({ roomId, name }, cb) => {
+  socket.on('join_room', safe(({ roomId, name }, cb) => {
     const room = rooms[roomId];
     if (!room) return cb({ ok: false, error: 'חדר לא קיים — בקש מהמארח ליצור חדר חדש' });
     if (room.game) return cb({ ok: false, error: 'משחק כבר התחיל' });
@@ -108,9 +126,9 @@ io.on('connection', (socket) => {
       players: room.players.map(p => ({ id: p.id, name: p.name })),
       host: room.host,
     });
-  });
+  }));
 
-  socket.on('start_game', (_, cb) => {
+  socket.on('start_game', safe((_, cb) => {
     const { roomId, playerId } = socket.data || {};
     const room = rooms[roomId];
     if (!room) return cb?.({ ok: false, error: 'חדר לא קיים' });
@@ -120,17 +138,17 @@ io.on('connection', (socket) => {
     room.game = createGame(room.players.map(p => p.id));
     cb?.({ ok: true });
     broadcastRoom(room);
-  });
+  }));
 
-  socket.on('chat_message', ({ text }) => {
+  socket.on('chat_message', safe(({ text }) => {
     const { roomId, playerId } = socket.data || {};
     const room = rooms[roomId];
     if (!room || !text?.trim()) return;
     const name = room.players.find(p => p.id === playerId)?.name || '?';
     io.to(roomId).emit('chat_message', { name, text: text.trim(), time: Date.now() });
-  });
+  }));
 
-  socket.on('game_action', (action, cb) => {
+  socket.on('game_action', safe((action, cb) => {
     const { roomId, playerId } = socket.data || {};
     const room = rooms[roomId];
     if (!room?.game) return cb?.({ ok: false, error: 'אין משחק פעיל' });
@@ -155,10 +173,9 @@ io.on('connection', (socket) => {
 
     cb?.(result);
     broadcastRoom(room);
-  });
+  }));
 
-  socket.on('rejoin_room', ({ roomId, playerId }, cb) => {
-    // Cancel pending removal timer
+  socket.on('rejoin_room', safe(({ roomId, playerId }, cb) => {
     if (disconnectTimers[playerId]) {
       clearTimeout(disconnectTimers[playerId]);
       delete disconnectTimers[playerId];
@@ -168,7 +185,6 @@ io.on('connection', (socket) => {
     const player = room.players.find(p => p.id === playerId);
     if (!player) return cb?.({ ok: false, error: 'שחקן לא נמצא' });
 
-    // Re-associate socket
     player.socketId = socket.id;
     socket.join(roomId);
     socket.data = { roomId, playerId };
@@ -183,14 +199,13 @@ io.on('connection', (socket) => {
         host: room.host,
       });
     }
-  });
+  }));
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', safe(() => {
     const { roomId, playerId } = socket.data || {};
     if (!roomId || !rooms[roomId]) return;
     const room = rooms[roomId];
 
-    // Wait 20 seconds before removing — gives time to reconnect
     disconnectTimers[playerId] = setTimeout(() => {
       delete disconnectTimers[playerId];
       if (!rooms[roomId]) return;
@@ -222,7 +237,7 @@ io.on('connection', (socket) => {
         });
       }
     }, 5 * 60 * 1000); // 5 minutes grace — covers phone screen-off
-  });
+  }));
 });
 
 app.get('/health', (_, res) => res.json({ ok: true }));
