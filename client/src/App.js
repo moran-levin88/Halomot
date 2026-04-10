@@ -13,7 +13,7 @@ export default function App() {
   const [gameState, setGameState] = useState(null);
   const [error, setError] = useState('');
   const [myName, setMyName] = useState('');
-
+  const [chatMessages, setChatMessages] = useState([]);
 
   // Refs so reconnect handler can read latest state
   const roomIdRef = useRef(null);
@@ -59,10 +59,14 @@ export default function App() {
       if (state) setScreen('game');
       setError('');
     });
+    socket.on('chat_message', (msg) => {
+      setChatMessages(prev => [...prev, msg]);
+    });
     return () => {
       socket.off('connect', doRejoin);
       socket.off('room_update');
       socket.off('game_state');
+      socket.off('chat_message');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -109,6 +113,10 @@ export default function App() {
     });
   }, []);
 
+  const sendChat = useCallback((text) => {
+    socket.emit('chat_message', { text });
+  }, []);
+
   return (
     <div className="app" dir="rtl">
       {screen === 'home' && (
@@ -121,6 +129,9 @@ export default function App() {
           isHost={isHost}
           onStart={startGame}
           error={error}
+          chatMessages={chatMessages}
+          onChat={sendChat}
+          myName={myName}
         />
       )}
       {screen === 'game' && gameState && (
@@ -131,6 +142,8 @@ export default function App() {
           myName={myName}
           onAction={sendAction}
           error={error}
+          chatMessages={chatMessages}
+          onChat={sendChat}
         />
       )}
     </div>

@@ -122,6 +122,14 @@ io.on('connection', (socket) => {
     broadcastRoom(room);
   });
 
+  socket.on('chat_message', ({ text }) => {
+    const { roomId, playerId } = socket.data || {};
+    const room = rooms[roomId];
+    if (!room || !text?.trim()) return;
+    const name = room.players.find(p => p.id === playerId)?.name || '?';
+    io.to(roomId).emit('chat_message', { name, text: text.trim(), time: Date.now() });
+  });
+
   socket.on('game_action', (action, cb) => {
     const { roomId, playerId } = socket.data || {};
     const room = rooms[roomId];

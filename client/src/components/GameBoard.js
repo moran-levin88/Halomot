@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Chat from './Chat';
 
 const QUEEN_COLORS = {
   rose:       '#ff6b9d',
@@ -27,7 +28,7 @@ const CARD_LABELS = {
   jester: { top: '🃏', label: 'ליצן' },
 };
 
-export default function GameBoard({ state, playerId, players, myName, onAction, error }) {
+export default function GameBoard({ state, playerId, players, myName, onAction, error, chatMessages, onChat }) {
   const [selected, setSelected] = useState([]);
   const [pendingPlay, setPendingPlay] = useState(null);
   const [message, setMessage] = useState('');
@@ -421,6 +422,8 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
           </div>
         </div>
       )}
+
+      <Chat messages={chatMessages || []} onSend={onChat} myName={myName} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import Chat from './Chat';
 
-export default function Lobby({ roomId, players, isHost, onStart, error }) {
+export default function Lobby({ roomId, players, isHost, onStart, error, chatMessages, onChat, myName }) {
   const [copied, setCopied] = useState(false);
 
   const copyCode = () => {
@@ -50,6 +51,8 @@ export default function Lobby({ roomId, players, isHost, onStart, error }) {
       {!isHost && <p className="waiting">ממתין למארח שיתחיל את המשחק...</p>}
 
       {error && <p className="error">{error}</p>}
+
+      <Chat messages={chatMessages || []} onSend={onChat} myName={myName} />
     </div>
   );
 }
