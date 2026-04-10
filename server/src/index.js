@@ -9,12 +9,13 @@ const {
 } = require('./gameLogic');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*' },
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  allowEIO3: true,
 });
 
 // rooms: { [roomId]: { id, players: [{id, name, socketId}], game, host } }
