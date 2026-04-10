@@ -36,17 +36,26 @@ function getRoomView(room, forPlayerId) {
       hand: pid === forPlayerId ? g.players[pid].hand : undefined,
     };
   }
+  // Replace player IDs with names in log entries
+  const nameMap = {};
+  for (const p of room.players) nameMap[p.id] = p.name;
+  const log = g.log.slice(-15).map(entry => {
+    let s = entry;
+    for (const [id, name] of Object.entries(nameMap)) s = s.split(id).join(name);
+    return s;
+  });
+
   return {
     players,
     playerOrder: g.playerOrder,
     sleepingQueens: g.sleepingQueens,
     drawPileCount: g.drawPile.length,
-    discardTop: g.discardPile[g.discardPile.length - 1] || null,
+    discardPile: g.discardPile.slice(-20),
     currentPlayer: currentPlayer(g),
     phase: g.phase,
     pendingAction: g.pendingAction,
     winner: g.winner,
-    log: g.log.slice(-10),
+    log,
   };
 }
 

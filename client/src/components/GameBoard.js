@@ -401,6 +401,27 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         </div>
       </div>
 
+      {/* Discard pile */}
+      {(state.discardPile?.length > 0) && (
+        <div className="discard-area">
+          <div className="discard-title">🗂️ קופת השלכות ({state.discardPile.length} קלפים)</div>
+          <div className="discard-row">
+            {[...state.discardPile].reverse().map((card, i) => (
+              <div key={i} className="discard-card">
+                {card.type === 'number' ? (
+                  <span className="discard-number">{card.value}</span>
+                ) : card.type === 'king' ? (
+                  <><span className="discard-icon">♚</span><span className="discard-label">{card.name || 'מלך'}</span></>
+                ) : (
+                  <><span className="discard-icon">{CARD_LABELS[card.type]?.top || '?'}</span>
+                    <span className="discard-label">{CARD_LABELS[card.type]?.label || card.type}</span></>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Log */}
       <div className="game-log">
         {[...(state.log || [])].reverse().map((entry, i) => (
