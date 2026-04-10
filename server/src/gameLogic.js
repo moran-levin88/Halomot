@@ -21,8 +21,20 @@ const QUEENS = [
 // ==================== DECK CREATION ====================
 function createDeck() {
   const deck = [];
-  // 10 kings
-  for (let i = 0; i < 10; i++) deck.push({ id: `king_${i}`, type: 'king' });
+  // 10 kings (each unique)
+  const kings = [
+    { id: 'king_puzzles',  type: 'king', name: 'מלך הפאזלים' },
+    { id: 'king_beatnik',  type: 'king', name: 'מלך הביניק' },
+    { id: 'king_magic',    type: 'king', name: 'מלך הקסמים' },
+    { id: 'king_tools',    type: 'king', name: 'מלך כלי העבודה' },
+    { id: 'king_nature',   type: 'king', name: 'מלך הצמחיות' },
+    { id: 'king_fire',     type: 'king', name: 'מלך האש' },
+    { id: 'king_turtles',  type: 'king', name: 'מלך הצבים' },
+    { id: 'king_gum',      type: 'king', name: 'מלך המסטיק' },
+    { id: 'king_pasta',    type: 'king', name: 'מלך הפסטה' },
+    { id: 'king_chess',    type: 'king', name: 'מלך השחמט' },
+  ];
+  for (const k of kings) deck.push(k);
   // 5 jesters
   for (let i = 0; i < 5; i++) deck.push({ id: `jester_${i}`, type: 'jester' });
   // 4 knights

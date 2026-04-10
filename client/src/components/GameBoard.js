@@ -20,7 +20,6 @@ const QUEEN_COLORS = {
 };
 
 const CARD_LABELS = {
-  king:   { top: '♚', label: 'מלך' },
   knight: { top: '⚔️', label: 'אביר' },
   dragon: { top: '🐉', label: 'דרקון' },
   potion: { top: '🧪', label: 'שיקוי' },
@@ -200,12 +199,19 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
   function HandCard({ card }) {
     const isSelected = selected.includes(card.id);
     const info = CARD_LABELS[card.type];
+    const isKing = card.type === 'king';
     return (
       <div
-        className={`hand-card ${isSelected ? 'selected' : ''} ${isMyTurn && phase === 'play' ? 'playable' : ''} ${info ? 'special-card' : ''}`}
+        className={`hand-card ${isSelected ? 'selected' : ''} ${isMyTurn && phase === 'play' ? 'playable' : ''} ${(info || isKing) ? 'special-card' : ''}`}
         onClick={() => selectCard(card)}
+        title={isKing ? card.name : undefined}
       >
-        {info ? (
+        {isKing ? (
+          <>
+            <div className="card-top-icon">♚</div>
+            <div className="card-special-label king-name">{card.name || 'מלך'}</div>
+          </>
+        ) : info ? (
           <>
             <div className="card-top-icon">{info.top}</div>
             <div className="card-special-label">{info.label}</div>

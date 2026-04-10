@@ -166,6 +166,7 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
 .card-number { font-size: 1.8rem; font-weight: bold; color: #e2e8f0; }
 .card-top-icon { font-size: 1.4rem; line-height: 1; }
 .card-special-label { font-size: 0.8rem; font-weight: bold; color: #fbbf24; margin-top: 0.15rem; }
+.king-name { font-size: 0.6rem; line-height: 1.3; }
 .card-count { font-size: 0.65rem; color: #64748b; margin-top: 0.1rem; }
 .special-card { border-color: #475569 !important; }
 .special-card.selected { border-color: #fbbf24 !important; }
