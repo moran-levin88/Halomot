@@ -12,7 +12,7 @@ const QUEENS = [
   { id: 'cake',        name: 'מלכת העוגות',      points: 5  },
   { id: 'icecream',    name: 'מלכת הגלידה',     points: 5  },
   { id: 'starfish',    name: 'מלכת כוכבי הים',  points: 5  },
-  { id: 'strawberry',  name: 'מלכת התותים',     points: 10 },
+  { id: 'strawberry',  name: 'מלכת התותים',     points: 10, special: 'strawberry' },
   { id: 'peacock',     name: 'מלכת הטווס',      points: 10 },
   { id: 'books',       name: 'מלכת הספרים',     points: 15 },
   { id: 'ladybug',     name: 'מלכת החיפושיות',  points: 10 },
@@ -151,6 +151,14 @@ function stealQueen(game, fromPlayerId, toPlayerId, queenId) {
   return true;
 }
 
+function hasCatDogConflict(existingQueens, newQueen) {
+  if (!newQueen) return false;
+  return (
+    (newQueen.special === 'cat' && existingQueens.some(q => q.special === 'dog')) ||
+    (newQueen.special === 'dog' && existingQueens.some(q => q.special === 'cat'))
+  );
+}
+
 function checkWin(game, playerId) {
   const n = game.playerOrder.length;
   const needQueens = n <= 3 ? 5 : 4;
@@ -196,6 +204,13 @@ function playKing(game, playerId, action) {
     return { ok: false, error: 'מלכה לא נמצאת' };
 
   game.discardPile.push(card);
+  const pendingQueen = game.sleepingQueens[action.queenIndex];
+  if (hasCatDogConflict(game.players[playerId].awakeQueens, pendingQueen)) {
+    game.log.push(`חתול וכלב לא יכולים יחד - ${pendingQueen.name} נשארת ישנה`);
+    fillHand(game, playerId);
+    nextTurn(game);
+    return { ok: true, event: 'cat_dog_conflict' };
+  }
   const queen = wakeQueen(game, playerId, action.queenIndex);
   game.log.push(`${playerId} העיר את ${queen.name}`);
 
@@ -226,6 +241,14 @@ function playRoseBonus(game, playerId, action) {
   if (action.queenIndex === undefined || game.sleepingQueens[action.queenIndex] === null)
     return { ok: false, error: 'מלכה לא נמצאת' };
 
+  const pendingQueen = game.sleepingQueens[action.queenIndex];
+  if (hasCatDogConflict(game.players[playerId].awakeQueens, pendingQueen)) {
+    game.log.push(`חתול וכלב לא יכולים יחד - ${pendingQueen.name} נשארת ישנה`);
+    game.phase = 'play';
+    game.pendingAction = null;
+    nextTurn(game);
+    return { ok: true, event: 'cat_dog_conflict' };
+  }
   const queen = wakeQueen(game, playerId, action.queenIndex);
   game.log.push(`${playerId} העיר את ${queen.name} (בונוס ורד)`);
   game.phase = 'play';
@@ -316,6 +339,12 @@ function playPotion(game, playerId, action) {
   if (!card || card.type !== 'potion') return { ok: false, error: 'קלף לא תקין' };
   if (!action.targetPlayerId || !action.queenId) return { ok: false, error: 'חסרים פרטים' };
   if (action.targetPlayerId === playerId) return { ok: false, error: 'לא יכול להרדים מלכה שלך' };
+  const targetQueen = game.players[action.targetPlayerId]?.awakeQueens.find(q => q.id === action.queenId);
+  if (targetQueen?.special === 'strawberry') {
+    // return card to hand - action is invalid
+    game.players[playerId].hand.push(card);
+    return { ok: false, error: 'לא ניתן להרדים את מלכת התותים!' };
+  }
 
   game.discardPile.push(card);
   game.phase = 'waiting_wand';
@@ -394,6 +423,14 @@ function respondJesterQueen(game, playerId, action) {
   if (action.queenIndex === undefined || game.sleepingQueens[action.queenIndex] === null)
     return { ok: false, error: 'מלכה לא נמצאת' };
 
+  const pendingQueen = game.sleepingQueens[action.queenIndex];
+  if (hasCatDogConflict(game.players[playerId].awakeQueens, pendingQueen)) {
+    game.log.push(`חתול וכלב לא יכולים יחד - ${pendingQueen.name} נשארת ישנה`);
+    game.phase = 'play';
+    game.pendingAction = null;
+    nextTurn(game);
+    return { ok: true, event: 'cat_dog_conflict' };
+  }
   const queen = wakeQueen(game, playerId, action.queenIndex);
   game.log.push(`${playerId} זכה להעיר מלכה מהליצן: ${queen.name}`);
   game.phase = 'play';
