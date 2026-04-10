@@ -85,11 +85,17 @@ body { font-family: 'Segoe UI', 'Arial', sans-serif; background: #0f0f1a; color:
 
 /* ===== OPPONENTS ===== */
 .opponents-area { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.opponents-area.targeting { border: 2px solid #f97316; border-radius: 12px; padding: 0.5rem; background: #1a120a44; }
 .opponent {
   flex: 1; min-width: 150px; background: #1e293b; border: 1px solid #334155;
   border-radius: 12px; padding: 0.75rem; transition: border-color 0.3s;
 }
 .opponent.active { border-color: #60a5fa; box-shadow: 0 0 10px #60a5fa33; }
+.opponent.targetable { border-color: #f97316; }
+.no-target-warning {
+  width: 100%; color: #f97316; font-size: 0.85rem; padding: 0.4rem 0.5rem;
+  background: #f9731622; border-radius: 8px; margin-bottom: 0.25rem;
+}
 .opponent-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .opponent-queens { display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 50px; }
 .no-queens { color: #475569; font-size: 0.8rem; align-self: center; }

@@ -115,6 +115,7 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
   // ---- Instruction ----
   function getInstruction() {
     if (state.winner) return message;
+    // Waiting phases — defender side
     if (phase === 'waiting_dragon' && state.pendingAction?.toPlayer === playerId) {
       const has = myHand.find(c => c.type === 'dragon');
       return has ? `${getName(state.pendingAction.fromPlayer)} שולח אביר! יש לך דרקון - האם לעצור?`
@@ -125,14 +126,21 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
       return has ? `${getName(state.pendingAction.fromPlayer)} מנסה להרדים מלכה! יש לך שרביט - האם להגן?`
                  : `${getName(state.pendingAction.fromPlayer)} מרדים מלכה ואין לך שרביט.`;
     }
+    // Waiting phases — attacker side (waiting for opponent to respond)
+    if (phase === 'waiting_dragon' && state.pendingAction?.fromPlayer === playerId)
+      return `⏳ ממתין לתגובת ${getName(state.pendingAction.toPlayer)}...`;
+    if (phase === 'waiting_wand' && state.pendingAction?.fromPlayer === playerId)
+      return `⏳ ממתין לתגובת ${getName(state.pendingAction.toPlayer)}...`;
     if (phase === 'waiting_jester_queen' && state.pendingAction?.toPlayer === playerId)
       return 'הליצן בחר אותך! בחר מלכה לישנה להעיר 👇';
+    if (phase === 'waiting_jester_queen' && state.pendingAction?.fromPlayer === playerId)
+      return `⏳ ממתין ל${getName(state.pendingAction.toPlayer)} לבחור מלכה...`;
     if (phase === 'waiting_rose' && state.pendingAction?.playerId === playerId)
       return 'מלכת הוורדים! בחר מלכה נוספת 🌹';
     if (!isMyTurn) return `התור של ${getName(state.currentPlayer)}...`;
     if (pendingPlay?.type === 'king') return 'בחר מלכה לישנה להעיר 👇';
-    if (pendingPlay?.type === 'knight') return 'בחר מלכה של יריב לגנוב ⚔️';
-    if (pendingPlay?.type === 'potion') return 'בחר מלכה של יריב להרדים 🧪';
+    if (pendingPlay?.type === 'knight') return '⚔️ בחר מלכה ערה של יריב לגנוב (למעלה)';
+    if (pendingPlay?.type === 'potion') return '🧪 בחר מלכה ערה של יריב להרדים (למעלה)';
     if (pendingPlay?.type === 'jester') return 'לחץ "שחק ליצן" לזרוק את הקוביה 🃏';
     if (selected.length > 0) return 'לחץ "השלך" להשתמש בקלפים שנבחרו';
     return 'בחר קלף לשחק, או בחר קלפים להשלכה';
@@ -278,38 +286,50 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
       <DefensePrompt />
 
       {/* Opponents */}
-      <div className="opponents-area">
-        {state.playerOrder.filter(pid => pid !== playerId).map(pid => {
-          const p = state.players[pid];
-          const pts = p.awakeQueens.reduce((s, q) => s + q.points, 0);
-          const canStealFromHere = pendingPlay?.type === 'knight' || pendingPlay?.type === 'potion';
-          return (
-            <div key={pid} className={`opponent ${state.currentPlayer === pid ? 'active' : ''}`}>
-              <div className="opponent-header">
-                <strong>{getName(pid)}</strong>
-                <span className="pts-badge">{pts} נק'</span>
-                <span className="hand-count">🃏×{p.handCount}</span>
+      {(() => {
+        const targeting = pendingPlay?.type === 'knight' || pendingPlay?.type === 'potion';
+        const opponentQueensExist = state.playerOrder
+          .filter(pid => pid !== playerId)
+          .some(pid => state.players[pid].awakeQueens.length > 0);
+        return (
+          <div className={`opponents-area ${targeting ? 'targeting' : ''}`}>
+            {targeting && !opponentQueensExist && (
+              <div className="no-target-warning">
+                ⚠️ לאף יריב אין מלכות ערות כרגע — לחץ "בטל בחירה" ובחר קלפים להשלכה
               </div>
-              <div className="opponent-queens">
-                {p.awakeQueens.length === 0 && <span className="no-queens">אין מלכות</span>}
-                {p.awakeQueens.map(queen => (
-                  <QueenCard
-                    key={queen.id}
-                    queen={queen}
-                    small
-                    dimmed={!canStealFromHere}
-                    onClick={canStealFromHere ? () => (
-                      pendingPlay.type === 'knight'
-                        ? playKnight(pid, queen.id)
-                        : playPotion(pid, queen.id)
-                    ) : null}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            )}
+            {state.playerOrder.filter(pid => pid !== playerId).map(pid => {
+              const p = state.players[pid];
+              const pts = p.awakeQueens.reduce((s, q) => s + q.points, 0);
+              return (
+                <div key={pid} className={`opponent ${state.currentPlayer === pid ? 'active' : ''} ${targeting ? 'targetable' : ''}`}>
+                  <div className="opponent-header">
+                    <strong>{getName(pid)}</strong>
+                    <span className="pts-badge">{pts} נק'</span>
+                    <span className="hand-count">🃏×{p.handCount}</span>
+                  </div>
+                  <div className="opponent-queens">
+                    {p.awakeQueens.length === 0 && <span className="no-queens">אין מלכות</span>}
+                    {p.awakeQueens.map(queen => (
+                      <QueenCard
+                        key={queen.id}
+                        queen={queen}
+                        small
+                        dimmed={false}
+                        onClick={targeting ? () => (
+                          pendingPlay.type === 'knight'
+                            ? playKnight(pid, queen.id)
+                            : playPotion(pid, queen.id)
+                        ) : null}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Awake queens on board */}
       {Object.values(state.players).some(p => p.awakeQueens.length > 0) && (
