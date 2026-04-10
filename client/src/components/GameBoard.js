@@ -45,7 +45,7 @@ export default function GameBoard({ state, playerId, players, myName, onAction, 
         ? '🎉 ניצחת! כל הכבוד!'
         : `👑 ${winnerData?.name || state.winner} ניצח!`);
     }
-  }, [state.winner]);
+  }, [state.winner, playerId, players]);
 
   const myHand = me?.hand || [];
   const getName = (pid) => players.find(p => p.id === pid)?.name || pid;
