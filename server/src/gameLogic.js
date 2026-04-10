@@ -24,10 +24,10 @@ function createDeck() {
   // 10 kings (each unique)
   const kings = [
     { id: 'king_puzzles',  type: 'king', name: 'מלך הפאזלים' },
-    { id: 'king_beatnik',  type: 'king', name: 'מלך הביניק' },
-    { id: 'king_magic',    type: 'king', name: 'מלך הקסמים' },
+    { id: 'king_beatnik',  type: 'king', name: 'מלך הבטיק' },
+    { id: 'king_magic',    type: 'king', name: 'מלך הכובעים' },
     { id: 'king_tools',    type: 'king', name: 'מלך כלי העבודה' },
-    { id: 'king_nature',   type: 'king', name: 'מלך הצמחיות' },
+    { id: 'king_nature',   type: 'king', name: 'מלך העוגיות' },
     { id: 'king_fire',     type: 'king', name: 'מלך האש' },
     { id: 'king_turtles',  type: 'king', name: 'מלך הצבים' },
     { id: 'king_gum',      type: 'king', name: 'מלך המסטיק' },
