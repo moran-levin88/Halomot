@@ -1,26 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Lobby({ roomId, players, isHost, onStart, error }) {
-  const link = `${window.location.origin}?room=${roomId}`;
+  const [copied, setCopied] = useState(false);
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(link);
+  const copyCode = () => {
+    navigator.clipboard.writeText(roomId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="lobby">
       <h1>👑 חלומות</h1>
-      <div className="room-code">
-        <span>קוד חדר:</span>
-        <strong>{roomId}</strong>
-      </div>
 
       <div className="share-box">
-        <p>שלח לחברים:</p>
-        <div className="share-row">
-          <input className="text-input share-link" readOnly value={link} />
-          <button className="btn btn-secondary" onClick={copyLink}>העתק</button>
+        <p>שלח לחברים את הקוד:</p>
+        <div className="room-code-row">
+          <strong className="room-code-big">{roomId}</strong>
+          <button className="btn btn-secondary" onClick={copyCode}>
+            {copied ? '✓ הועתק' : 'העתק קוד'}
+          </button>
         </div>
+        <p className="share-hint">הם נכנסים ל-halomot.vercel.app ומקישים את הקוד</p>
       </div>
 
       <div className="player-list">

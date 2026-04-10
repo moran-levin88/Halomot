@@ -14,8 +14,6 @@ export default function App() {
   const [error, setError] = useState('');
   const [myName, setMyName] = useState('');
 
-  // Read room code from URL (e.g. ?room=B8EEE3)
-  const urlRoom = new URLSearchParams(window.location.search).get('room') || '';
 
   // Refs so reconnect handler can read latest state
   const roomIdRef = useRef(null);
@@ -114,7 +112,7 @@ export default function App() {
   return (
     <div className="app" dir="rtl">
       {screen === 'home' && (
-        <HomeScreen onCreate={createRoom} onJoin={joinRoom} error={error} urlRoom={urlRoom} />
+        <HomeScreen onCreate={createRoom} onJoin={joinRoom} error={error} />
       )}
       {screen === 'lobby' && (
         <Lobby
@@ -139,10 +137,10 @@ export default function App() {
   );
 }
 
-function HomeScreen({ onCreate, onJoin, error, urlRoom }) {
+function HomeScreen({ onCreate, onJoin, error }) {
   const [name, setName] = useState('');
-  const [joinCode, setJoinCode] = useState(urlRoom);
-  const [mode, setMode] = useState(urlRoom ? 'join' : '');
+  const [joinCode, setJoinCode] = useState('');
+  const [mode, setMode] = useState('');
 
   return (
     <div className="home">
